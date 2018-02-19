@@ -13,7 +13,7 @@ openweathermap-client
 About
 =====
 
-[OpenWeatherMap API](https://openweathermap.org/api) client to retrieve
+`OpenWeatherMap API <https://openweathermap.org/api>`_ client to retrieve
 current weather and forecasts for cities over the world, and concentrating on
 free access datas.
 

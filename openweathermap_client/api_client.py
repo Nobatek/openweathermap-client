@@ -247,8 +247,8 @@ class OpenWeatherMapClient():
         """Use a marshmallow schema to deserialize JSON data."""
         data_schema = data_schema_info['name'](many=data_schema_info['many'])
         try:
-            # return deserialized data
-            return data_schema.load(json_data)
+            # validate and deserialized data
+            return data_schema.load(json_data)[0]
         except ma.ValidationError as src_exc:
             exc = OWMClientValidationError(str(src_exc))
             logger.error(str(exc))

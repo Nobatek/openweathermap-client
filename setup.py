@@ -60,7 +60,7 @@ setup(
     # https://caremad.io/2013/07/setup-vs-requirement/
     install_requires=[
         'requests>=2.18',
-        'marshmallow>=3.0.0b7',
+        'marshmallow>=2.15.2,<3.0.0',
     ],
 
     # List additional groups of dependencies here (e.g. development

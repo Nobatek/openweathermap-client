@@ -37,6 +37,7 @@ class WindDataSchema(ma.Schema):
     """Wind data schema."""
     direction = ma.fields.Float(load_from='deg')  # wind direction, degrees
     speed = ma.fields.Float()  # wind speed, meter/sec
+    gust = ma.fields.Float()  # wind gust, meter/sec
 
 
 class WeatherDataSchema(ma.Schema):

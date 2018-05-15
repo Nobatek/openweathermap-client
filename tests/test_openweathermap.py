@@ -23,15 +23,17 @@ class TestOpenWeatherMapClient():
         assert client.host == apihost
         assert client.max_retries == 5
         assert client._base_uri == 'https://{}'.format(apihost)
-        assert client._base_uri_params == {'appid': apikey}
+        assert client._base_uri_params == {'appid': apikey, 'units': 'metric'}
         assert client.last_uri_call is None
 
-        client = OpenWeatherMapClient(apikey, use_ssl=False, max_retries=3)
+        client = OpenWeatherMapClient(
+            apikey, use_ssl=False, max_retries=3, units='standard')
         assert client.api_key == apikey
         assert client.host == _API_HOST
         assert client.max_retries == 3
         assert client._base_uri == 'http://{}'.format(_API_HOST)
-        assert client._base_uri_params == {'appid': apikey}
+        assert client._base_uri_params == {
+            'appid': apikey, 'units': 'standard'}
         assert client.last_uri_call is None
 
     @pytest.mark.slow

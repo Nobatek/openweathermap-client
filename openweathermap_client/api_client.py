@@ -103,7 +103,8 @@ class OpenWeatherMapClient():
     }
 
     def __init__(
-            self, api_key, *, use_ssl=True, host=_API_HOST, max_retries=5):
+            self, api_key, *, use_ssl=True, host=_API_HOST, max_retries=5,
+            units='metric'):
         """
         :param str api_key: API key used to call the API.
         :param bool use_ssl: (optional, default True)
@@ -111,6 +112,9 @@ class OpenWeatherMapClient():
             Server host name of the API.
         :param int max_retries: (optional, default 5)
             Number max of retries if errors occured while calling the API.
+        :param str units: (optional, default metric)
+            Units format. standard, metric, and imperial units are available.
+            See https://openweathermap.org/weather-data
         """
         if api_key is None:
             raise OWMClientKeyNotDefinedError()
@@ -118,10 +122,14 @@ class OpenWeatherMapClient():
         self.api_key = api_key
         self.host = host or _API_HOST
         self.max_retries = max_retries
+        self.units = units
 
         self._base_uri = 'http{ssl}://{host}'.format(
             ssl='s' if use_ssl else '', host=self.host)
-        self._base_uri_params = {'appid': self.api_key}
+        self._base_uri_params = {
+            'appid': self.api_key,
+            'units': self.units,
+        }
 
         self.last_uri_call = None
         self.last_uri_call_tries = 0
@@ -199,7 +207,8 @@ class OpenWeatherMapClient():
 
         return response
 
-    def _get_data(self, service_name, *, extra_uri=None, params=None):
+    def _get_data(self, service_name, *, extra_uri=None, params=None,
+                  with_units=True):
         """Send GET request to retrieve data from a service.
 
         :param str service_name:
@@ -226,6 +235,8 @@ class OpenWeatherMapClient():
         # prepare query parameters
         query_params = params or OrderedDict()
         query_params.update(self._base_uri_params)
+        if not with_units:
+            query_params.pop('units')
         # send request and receive response
         response = self._get(uri, params=query_params)
 
@@ -297,7 +308,6 @@ class OpenWeatherMapClient():
         :param str city_id: The ID of the city to watch.
         """
         query_params = {'id': city_id}
-        query_params['units'] = 'metric'
         return self._get_data('forecast_5d', params=query_params)
 
     def get_forecast_by_coord(self, latitude, longitude):
@@ -308,7 +318,6 @@ class OpenWeatherMapClient():
         :param float longitude: The longitude coordinate of the city to watch.
         """
         query_params = {'lat': latitude, 'lon': longitude}
-        query_params['units'] = 'metric'
         return self._get_data('forecast_5d', params=query_params)
 
     def get_forecast_by_city_name(
@@ -337,7 +346,6 @@ class OpenWeatherMapClient():
                 .format(search_type))
             logger.warning(str(exc))
             raise exc
-        query_params['units'] = 'metric'
         return self._get_data('forecast_5d', params=query_params)
 
     def get_forecast_by_zip_code(self, zip_code, country_code):
@@ -348,7 +356,6 @@ class OpenWeatherMapClient():
         :param str country_code: ISO 3166 country code of the city to watch.
         """
         query_params = {'zip': '{},{}'.format(zip_code, country_code)}
-        query_params['units'] = 'metric'
         return self._get_data('forecast_5d', params=query_params)
 
     def get_current_weather_by_city_id(self, city_id):
@@ -365,7 +372,6 @@ class OpenWeatherMapClient():
         :param float longitude: The longitude coordinate of the city to watch.
         """
         query_params = {'lat': latitude, 'lon': longitude}
-        query_params['units'] = 'metric'
         return self._get_data('current_weather', params=query_params)
 
     def get_current_weather_by_city_name(
@@ -393,7 +399,6 @@ class OpenWeatherMapClient():
                 .format(search_type))
             logger.warning(str(exc))
             raise exc
-        query_params['units'] = 'metric'
         return self._get_data('current_weather', params=query_params)
 
     def get_current_weather_by_zip_code(self, zip_code, country_code):
@@ -403,7 +408,6 @@ class OpenWeatherMapClient():
         :param str country_code: ISO 3166 country code of the city to watch.
         """
         query_params = {'zip': '{},{}'.format(zip_code, country_code)}
-        query_params['units'] = 'metric'
         return self._get_data('current_weather', params=query_params)
 
     def get_current_weather_within_box(
@@ -435,7 +439,6 @@ class OpenWeatherMapClient():
             raise exc
         if lang is not None:
             query_params.update({'lang': lang})
-        query_params['units'] = 'metric'
         return self._get_data('current_weather_box', params=query_params)
 
     def get_current_weather_within_circle(
@@ -466,7 +469,6 @@ class OpenWeatherMapClient():
             raise exc
         if lang is not None:
             query_params.update({'lang': lang})
-        query_params['units'] = 'metric'
         return self._get_data('current_weather_circle', params=query_params)
 
     def get_current_weather_group(self, city_ids):
@@ -484,7 +486,6 @@ class OpenWeatherMapClient():
             logger.warning(str(exc))
             raise exc
         query_params = {'id': ','.join([str(cur_id) for cur_id in city_ids])}
-        query_params['units'] = 'metric'
         return self._get_data('current_weather_group', params=query_params)
 
     def get_air_pollution_carbon_monoxyde(
@@ -527,10 +528,8 @@ class OpenWeatherMapClient():
             ISO 8601 date (UTC time) or alias ('current').
         """
         extra_uri = '{},{}/{}.json'.format(latitude, longitude, datetime)
-        query_params = {'units': 'metric'}
         return self._get_data(
-            'air_pollution_carbon_monoxyde', extra_uri=extra_uri,
-            params=query_params)
+            'air_pollution_carbon_monoxyde', extra_uri=extra_uri)
 
     def get_air_pollution_ozone(
             self, latitude, longitude, *, datetime='current'):
@@ -545,9 +544,7 @@ class OpenWeatherMapClient():
             ISO 8601 date (UTC time) or alias ('current').
         """
         extra_uri = '{},{}/{}.json'.format(latitude, longitude, datetime)
-        query_params = {'units': 'metric'}
-        return self._get_data(
-            'air_pollution_ozone', extra_uri=extra_uri, params=query_params)
+        return self._get_data('air_pollution_ozone', extra_uri=extra_uri)
 
     def get_air_pollution_sulfur_dioxide(
             self, latitude, longitude, *, datetime='current'):
@@ -562,10 +559,8 @@ class OpenWeatherMapClient():
             ISO 8601 date (UTC time) or alias ('current').
         """
         extra_uri = '{},{}/{}.json'.format(latitude, longitude, datetime)
-        query_params = {'units': 'metric'}
         return self._get_data(
-            'air_pollution_sulfur_dioxide', extra_uri=extra_uri,
-            params=query_params)
+            'air_pollution_sulfur_dioxide', extra_uri=extra_uri)
 
     def get_air_pollution_nitrogen_dioxide(
             self, latitude, longitude, *, datetime='current'):
@@ -580,10 +575,8 @@ class OpenWeatherMapClient():
             ISO 8601 date (UTC time) or alias ('current').
         """
         extra_uri = '{},{}/{}.json'.format(latitude, longitude, datetime)
-        query_params = {'units': 'metric'}
         return self._get_data(
-            'air_pollution_nitrogen_dioxide', extra_uri=extra_uri,
-            params=query_params)
+            'air_pollution_nitrogen_dioxide', extra_uri=extra_uri)
 
     def get_uv_index_current(self, latitude, longitude):
         """Retrieve current UV (ultraviolet) index, by geographic coordinates.
@@ -595,7 +588,8 @@ class OpenWeatherMapClient():
         query_params = OrderedDict()
         query_params['lat'] = latitude
         query_params['lon'] = longitude
-        return self._get_data('uv_index_current', params=query_params)
+        return self._get_data(
+            'uv_index_current', params=query_params, with_units=False)
 
     def get_uv_index_forecast(self, latitude, longitude):
         """Retrieve forecast UV (ultraviolet) index.
@@ -607,7 +601,8 @@ class OpenWeatherMapClient():
         query_params = OrderedDict()
         query_params['lat'] = latitude
         query_params['lon'] = longitude
-        return self._get_data('uv_index_forecast', params=query_params)
+        return self._get_data(
+            'uv_index_forecast', params=query_params, with_units=False)
 
     def get_uv_index_historical(self, latitude, longitude, dt_start, dt_end):
         """Retrieve historical UV (ultraviolet) index.
@@ -623,4 +618,5 @@ class OpenWeatherMapClient():
         query_params['lon'] = longitude
         query_params['start'] = dt_start.timestamp()
         query_params['end'] = dt_end.timestamp()
-        return self._get_data('uv_index_historical', params=query_params)
+        return self._get_data(
+            'uv_index_historical', params=query_params, with_units=False)

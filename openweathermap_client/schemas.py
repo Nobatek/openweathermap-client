@@ -50,17 +50,21 @@ class WeatherDataSchema(ma.Schema):
 
 class CloudDataSchema(ma.Schema):
     """Cloud data schema."""
-    clouds_all = ma.fields.Integer()  # cloudiness percentage, %
+    clouds_all = ma.fields.Integer(load_from='all')  # cloudiness percentage, %
 
 
 class RainDataSchema(ma.Schema):
     """Rain data schema."""
-    rain_3h = ma.fields.Float()  # rain volume for the last 3 hours, mm
+    rain_3h = ma.fields.Float(
+        load_from='3h'
+    )  # rain volume for the last 3 hours, mm
 
 
 class SnowDataSchema(ma.Schema):
     """Snow data schema."""
-    snow_3h = ma.fields.Float()  # snow volume for the last 3 hours
+    snow_3h = ma.fields.Float(
+        load_from='3h'
+    )  # snow volume for the last 3 hours, mm
 
 
 class ForecastDataSchema(ma.Schema):
@@ -120,15 +124,10 @@ class CurrentWeatherSchema(ma.Schema):
         ma.fields.Nested(WeatherDataSchema)
     )
     clouds = ma.fields.Nested(CloudDataSchema)
+    visibility = ma.fields.Float()  # visibility distance, meter
     wind = ma.fields.Nested(WindDataSchema)
-    rain = ma.fields.Nested(
-        RainDataSchema,
-        allow_none=True
-    )
-    snow = ma.fields.Nested(
-        SnowDataSchema,
-        allow_none=True
-    )
+    rain = ma.fields.Nested(RainDataSchema)
+    snow = ma.fields.Nested(SnowDataSchema)
     sys = ma.fields.Nested(CurrentWeatherSysDataSchema)
 
     @staticmethod

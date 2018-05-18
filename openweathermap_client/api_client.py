@@ -37,6 +37,11 @@ _API_HOST = 'api.openweathermap.org'
 _API_DATA_VERSION = '2.5'
 _API_POLLUTION_VERSION = 'v1'
 
+_DEFAULT_USESSL = True
+_DEFAULT_UNITS = 'metric'
+_DEFAULT_MAX_RETRIES = 5
+_DEFAULT_TIMEOUT = 10
+
 
 logger = logging.getLogger(_LOGGER_NAME)
 
@@ -102,9 +107,9 @@ class OpenWeatherMapClient():
             'description': 'Historical UV index for a location.'},
     }
 
-    def __init__(
-            self, api_key, *, use_ssl=True, host=_API_HOST, max_retries=5,
-            timeout=10, units='metric'):
+    def __init__(self, api_key, *, use_ssl=_DEFAULT_USESSL, host=_API_HOST,
+                 units=_DEFAULT_UNITS, max_retries=_DEFAULT_MAX_RETRIES,
+                 timeout=_DEFAULT_TIMEOUT):
         """
         :param str api_key: API key used to call the API.
         :param bool use_ssl: (optional, default True)
@@ -112,6 +117,7 @@ class OpenWeatherMapClient():
             Server host name of the API.
         :param int max_retries: (optional, default 5)
             Number max of retries if errors occured while calling the API.
+            Must be greater or equal than zero. If not, replaced by default.
         :param float|tuple timeout: (optional, default 10)
             API requests timeout, in seconds. Set `None` to wait forever.
             A 2 floats tuple defines separately connection and request timeout.
@@ -125,6 +131,8 @@ class OpenWeatherMapClient():
         self.api_key = api_key
         self.host = host or _API_HOST
         self.max_retries = max_retries
+        if max_retries < 0:
+            self.max_retries = _DEFAULT_MAX_RETRIES
         self.timeout = timeout
         self.units = units
 
@@ -177,7 +185,7 @@ class OpenWeatherMapClient():
         self.last_uri_call_tries = 0
 
         is_success = False
-        while not is_success and self.last_uri_call_tries < self.max_retries:
+        while not is_success and self.last_uri_call_tries <= self.max_retries:
             self.last_uri_call_tries += 1
             try:
                 # send request and receive response

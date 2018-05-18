@@ -9,7 +9,8 @@ from requests.exceptions import HTTPError as req_HTTPError
 
 from openweathermap_client import OpenWeatherMapClient
 from openweathermap_client.exceptions import OWMClientKeyNotDefinedError
-from openweathermap_client.api_client import _API_HOST
+from openweathermap_client.api_client import (
+    _API_HOST, _DEFAULT_MAX_RETRIES, _DEFAULT_UNITS)
 
 
 class TestOpenWeatherMapClient():
@@ -21,9 +22,10 @@ class TestOpenWeatherMapClient():
         client = OpenWeatherMapClient(apikey, host=apihost)
         assert client.api_key == apikey
         assert client.host == apihost
-        assert client.max_retries == 5
+        assert client.max_retries == _DEFAULT_MAX_RETRIES
         assert client._base_uri == 'https://{}'.format(apihost)
-        assert client._base_uri_params == {'appid': apikey, 'units': 'metric'}
+        assert client._base_uri_params == {
+            'appid': apikey, 'units': _DEFAULT_UNITS}
         assert client.last_uri_call is None
 
         client = OpenWeatherMapClient(
@@ -35,6 +37,9 @@ class TestOpenWeatherMapClient():
         assert client._base_uri_params == {
             'appid': apikey, 'units': 'standard'}
         assert client.last_uri_call is None
+
+        client = OpenWeatherMapClient(apikey, max_retries=-1)
+        assert client.max_retries == _DEFAULT_MAX_RETRIES
 
     @pytest.mark.slow
     def test_openweathermap_client_city_list(self, apikey, apihost):
@@ -59,6 +64,7 @@ class TestOpenWeatherMapClient():
         client = OpenWeatherMapClient(apikey, host=apihost)
 
         # get cities list
+        # not validating data with marshmallow is faster
         result_data = client.get_city_list(validate_with_schema=False)
         assert len(result_data) > 0
         assert result_data[0]['id'] is not None

@@ -104,7 +104,7 @@ class OpenWeatherMapClient():
 
     def __init__(
             self, api_key, *, use_ssl=True, host=_API_HOST, max_retries=5,
-            units='metric'):
+            timeout=10, units='metric'):
         """
         :param str api_key: API key used to call the API.
         :param bool use_ssl: (optional, default True)
@@ -112,6 +112,9 @@ class OpenWeatherMapClient():
             Server host name of the API.
         :param int max_retries: (optional, default 5)
             Number max of retries if errors occured while calling the API.
+        :param float|tuple timeout: (optional, default 10)
+            API requests timeout, in seconds. Set `None` to wait forever.
+            A 2 floats tuple defines separately connection and request timeout.
         :param str units: (optional, default metric)
             Units format. standard, metric, and imperial units are available.
             See https://openweathermap.org/weather-data
@@ -122,6 +125,7 @@ class OpenWeatherMapClient():
         self.api_key = api_key
         self.host = host or _API_HOST
         self.max_retries = max_retries
+        self.timeout = timeout
         self.units = units
 
         self._base_uri = 'http{ssl}://{host}'.format(
@@ -177,7 +181,7 @@ class OpenWeatherMapClient():
             self.last_uri_call_tries += 1
             try:
                 # send request and receive response
-                response = requests.get(uri, **kwargs)
+                response = requests.get(uri, timeout=self.timeout, **kwargs)
             except (requests.ConnectionError, requests.Timeout,) as src_exc:
                 logger.warning(
                     '%i/%i GET %s: %s', self.last_uri_call_tries,
